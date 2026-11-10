@@ -15,11 +15,12 @@ use wayland_server::{
     },
 };
 
+use crate::backend::input::InputTime;
 use crate::input::{
     Seat,
     dnd::{DndAction, Source, SourceMetadata},
 };
-use crate::utils::{IsAlive, alive_tracker::AliveTracker};
+use crate::utils::{IsAlive, SERIAL_COUNTER, alive_tracker::AliveTracker};
 use crate::wayland::Dispatch2;
 use crate::wayland::selection::offer::OfferReplySource;
 use crate::wayland::selection::seat_data::SeatData;
@@ -92,6 +93,20 @@ where
             Some(seat) => seat,
             None => return,
         };
+
+        // Only a dead active grab is retired. An older dropped source may be
+        // destroyed while a different source still owns the current grab.
+        // Do this before borrowing SeatData: cancellation can call the handler.
+        if let Some(pointer) = seat.get_pointer() {
+            if pointer.with_grab(|_, grab| !grab.is_alive()).unwrap_or(false) {
+                pointer.unset_grab(state, SERIAL_COUNTER.next_serial(), InputTime::now());
+            }
+        }
+        if let Some(touch) = seat.get_touch() {
+            if touch.with_grab(|_, grab| !grab.is_alive()).unwrap_or(false) {
+                touch.unset_grab(state);
+            }
+        }
 
         let mut seat_data = seat
             .user_data()

@@ -31,6 +31,14 @@ use super::{DownEvent, MotionEvent, OrientationEvent, ShapeEvent, TouchInnerHand
 /// the struct implementing this trait will be dropped. As such you should put clean-up logic in the destructor,
 /// rather than trying to guess when the grab will end.
 pub trait TouchGrab<D: SeatHandler>: Send + Downcast {
+    /// Whether the resources required by this grab are still alive.
+    ///
+    /// Returning false cancels the grab before another input event is dispatched.
+    /// The default keeps existing grab implementations live until explicitly ended.
+    fn is_alive(&self) -> bool {
+        true
+    }
+
     /// A new touch point appeared
     ///
     /// This method allows you attach additional behavior to a down event, possibly altering it.

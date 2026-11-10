@@ -1290,6 +1290,14 @@ impl<D: SeatHandler + 'static> KeyboardHandle<D> {
         }
     }
 
+    /// Content identity of the seat keymap, without serializing or cloning the map.
+    ///
+    /// Clients using a frozen keymap can retire their devices when this changes.
+    #[cfg(feature = "wayland_frontend")]
+    pub fn keymap_id(&self) -> KeymapFileId {
+        self.arc.keymap.lock().unwrap().id()
+    }
+
     /// Get the current modifiers state.
     pub fn modifier_state(&self) -> ModifiersState {
         self.arc.internal.lock().unwrap().mods_state

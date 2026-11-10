@@ -1093,20 +1093,31 @@ impl<D: SeatHandler + 'static> KeyboardHandle<D> {
     /// or a libei connection drops), forwarding the resulting releases to the focused client.
     ///
     /// This is a teardown-only path: the releases are forwarded directly and do not run
-    /// the compositor's input filter, so a departing source can't trigger a key binding
+    /// the compositor's input filter, so a departing source can't trigger a key binding.
+    /// Only previously forwarded presses produce ordinary releases; intercepted keys
+    /// still release their seat state and publish changed modifiers.
     pub fn release_source(&self, data: &mut D, source: KeyboardSource) {
-        let (transitioned, mods) = {
+        let (forwarded, intercepted) = {
             let mut guard = self.arc.internal.lock().unwrap();
-            let transitioned = guard.release_source_keys(source);
-            (transitioned, guard.mods_state)
+            let mut forwarded = Vec::new();
+            let mut intercepted = false;
+            for keycode in guard.release_source_keys(source) {
+                if guard.forwarded_pressed_keys.contains(&keycode) {
+                    forwarded.push(keycode);
+                } else {
+                    intercepted = true;
+                }
+            }
+            (forwarded, intercepted)
         };
-        let _ = mods;
         let serial = SERIAL_COUNTER.next_serial();
         let time = InputTime::now();
-        for keycode in transitioned {
-            // modifiers may have changed as a modifier key was released; let input_forward
-            // re-derive and send the current state.
+        for keycode in forwarded {
             self.input_forward(data, keycode, KeyState::Released, serial, time, true);
+        }
+        if intercepted {
+            // Seat state changes even when no matching press was forwarded.
+            self.advertise_modifier_state(data);
         }
     }
 

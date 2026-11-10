@@ -299,6 +299,11 @@ where
     }
 
     fn drop<'a>(&'a mut self, data: &mut D, into_target: impl Fn(&'a F) -> DndTarget<'a, D>) {
+        if !self.data_source.alive() {
+            self.cancel(data);
+            return;
+        }
+
         // the user dropped, proceed to the drop
         let validated = self.offer_data.as_ref().is_some_and(|data| data.validated());
         if let Some(ref focus) = self.current_focus {
@@ -342,6 +347,10 @@ where
     D: 'static,
     S: Source,
 {
+    fn is_alive(&self) -> bool {
+        self.data_source.alive()
+    }
+
     fn motion(
         &mut self,
         data: &mut D,
@@ -478,6 +487,10 @@ where
     D: 'static,
     S: Source,
 {
+    fn is_alive(&self) -> bool {
+        self.data_source.alive()
+    }
+
     fn down(
         &mut self,
         _data: &mut D,

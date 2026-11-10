@@ -721,19 +721,23 @@ impl<D: SeatHandler + 'static> TouchInternal<D> {
         match grab {
             GrabStatus::Borrowed => panic!("Accessed a touch grab from within a touch grab access."),
             GrabStatus::Active(_, ref mut handler) => {
-                // If this grab is associated with a surface that is no longer alive, discard it
-                if let Some((ref focus, _)) = handler.start_data().focus {
-                    if !focus.alive() {
-                        handler.unset(data);
-                        self.grab = GrabStatus::None;
-                        let mut default_grab = (self.default_grab)();
-                        f(
-                            data,
-                            &mut TouchInnerHandle { inner: self, seat },
-                            &mut *default_grab,
-                        );
-                        return;
-                    }
+                // A grab may depend on more than its originating surface.
+                if !handler.is_alive()
+                    || handler
+                        .start_data()
+                        .focus
+                        .as_ref()
+                        .is_some_and(|(focus, _)| !focus.alive())
+                {
+                    handler.unset(data);
+                    self.grab = GrabStatus::None;
+                    let mut default_grab = (self.default_grab)();
+                    f(
+                        data,
+                        &mut TouchInnerHandle { inner: self, seat },
+                        &mut *default_grab,
+                    );
+                    return;
                 }
                 f(data, &mut TouchInnerHandle { inner: self, seat }, &mut **handler);
             }

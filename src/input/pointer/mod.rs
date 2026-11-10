@@ -276,6 +276,24 @@ impl<D: SeatHandler + 'static> PointerHandle<D> {
         });
     }
 
+    /// Record a press consumed before dispatch that started a compositor grab.
+    /// No button event is sent to that grab or a client.
+    pub fn press_suppressed_button(&self, button: u32) {
+        let mut inner = self.arc.inner.lock().unwrap();
+        if !inner.pressed_buttons.contains(&button) {
+            inner.pressed_buttons.push(button);
+        }
+    }
+
+    /// Remove bookkeeping for a release already consumed by the compositor.
+    /// No button event is dispatched to a grab or client. The caller is
+    /// responsible for completing any affected compositor or implicit grab.
+    pub fn release_suppressed_button(&self, button: u32) -> bool {
+        let mut inner = self.arc.inner.lock().unwrap();
+        inner.pressed_buttons.retain(|old| *old != button);
+        inner.pressed_buttons.is_empty()
+    }
+
     /// Start an axis frame
     ///
     /// A single frame will group multiple scroll events as if they happened in the same instance.

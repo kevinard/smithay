@@ -76,6 +76,11 @@ impl std::hash::Hash for VirtualPointerDevice {
 }
 
 impl VirtualPointerDevice {
+    /// Whether this device's Wayland resource is still alive.
+    pub fn is_alive(&self) -> bool {
+        self.pointer.is_alive()
+    }
+
     /// The seat this virtual pointer was created for, if any.
     pub fn wl_seat(&self) -> Option<&WlSeat> {
         self.data.seat.as_ref()

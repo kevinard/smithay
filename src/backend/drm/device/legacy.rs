@@ -123,7 +123,7 @@ impl LegacyDrmDevice {
 
 impl Drop for LegacyDrmDevice {
     fn drop(&mut self) {
-        if self.active.load(Ordering::SeqCst) {
+        if self.active.load(Ordering::SeqCst) && !self.fd.keeps_last_frame() {
             let _guard = self.span.enter();
 
             // Here we restore the tty to it's previous state.

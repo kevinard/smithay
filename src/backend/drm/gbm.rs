@@ -6,7 +6,7 @@ use thiserror::Error;
 
 use drm::{
     buffer::PlanarBuffer,
-    control::{Device, FbCmd2Flags, framebuffer},
+    control::{FbCmd2Flags, framebuffer},
 };
 use drm_fourcc::DrmModifier;
 use tracing::{trace, warn};
@@ -40,7 +40,7 @@ impl Drop for GbmFramebuffer {
     #[inline]
     fn drop(&mut self) {
         trace!(fb = ?self.fb, "destroying framebuffer");
-        if let Err(err) = self.drm.destroy_framebuffer(self.fb) {
+        if let Err(err) = self.drm.release_framebuffer(self.fb) {
             warn!(fb = ?self.fb, ?err, "failed to destroy framebuffer");
         }
     }

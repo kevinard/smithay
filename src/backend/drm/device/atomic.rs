@@ -237,7 +237,7 @@ impl AtomicDrmDevice {
 
 impl Drop for AtomicDrmDevice {
     fn drop(&mut self) {
-        if self.active.load(Ordering::SeqCst) {
+        if self.active.load(Ordering::SeqCst) && !self.fd.keeps_last_frame() {
             let _guard = self.span.enter();
 
             // Here we restore the card/tty's to it's previous state.

@@ -493,6 +493,11 @@ impl Drop for LegacyDrmSurface {
             return;
         }
 
+        if self.fd.device_fd().keeps_last_frame() {
+            // Leave the current frame for whoever takes over the device.
+            return;
+        }
+
         // disable connectors again
         let current = self.state.read().unwrap();
         if set_connector_state(&*self.fd, current.connectors.iter().copied(), false).is_ok() {

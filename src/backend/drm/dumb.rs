@@ -34,7 +34,7 @@ pub struct DumbFramebuffer {
 impl Drop for DumbFramebuffer {
     fn drop(&mut self) {
         trace!(fb = ?self.fb, "destroying framebuffer");
-        if let Err(err) = self.drm.destroy_framebuffer(self.fb) {
+        if let Err(err) = self.drm.release_framebuffer(self.fb) {
             warn!(fb = ?self.fb, ?err, "failed to destroy framebuffer");
         }
     }

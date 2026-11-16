@@ -1063,6 +1063,11 @@ impl Drop for AtomicDrmSurface {
             return;
         }
 
+        if self.fd.device_fd().keeps_last_frame() {
+            // Leave the current frame for whoever takes over the device.
+            return;
+        }
+
         let _guard = self.span.enter();
         if let Err(err) = self.clear_state() {
             warn!("Unable to clear state: {}", err);
